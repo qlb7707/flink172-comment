@@ -219,7 +219,7 @@ public class StreamingJobGraphGenerator {
 			Map<Integer, List<Tuple2<byte[], byte[]>>> chainedOperatorHashes) {
 
 		if (!builtVertices.contains(startNodeId)) {
-
+			//该节点所有输出的边
 			List<StreamEdge> transitiveOutEdges = new ArrayList<StreamEdge>();
 
 			List<StreamEdge> chainableOutputs = new ArrayList<StreamEdge>();
@@ -271,6 +271,7 @@ public class StreamingJobGraphGenerator {
 				config.setOutEdges(streamGraph.getStreamNode(currentNodeId).getOutEdges());
 
 				for (StreamEdge edge : transitiveOutEdges) {
+					//连接当前节点， startNodeId标记task链的起始节点
 					connect(startNodeId, edge);
 				}
 
@@ -491,12 +492,13 @@ public class StreamingJobGraphGenerator {
 		JobVertex downStreamVertex = jobVertices.get(downStreamvertexID);
 
 		StreamConfig downStreamConfig = new StreamConfig(downStreamVertex.getConfiguration());
-
+		//动态设置下游节点input数量
 		downStreamConfig.setNumberOfInputs(downStreamConfig.getNumberOfInputs() + 1);
 
 		StreamPartitioner<?> partitioner = edge.getPartitioner();
 		JobEdge jobEdge;
 		if (partitioner instanceof ForwardPartitioner || partitioner instanceof RescalePartitioner) {
+			//下游节点连接上游节点，加入到input
 			jobEdge = downStreamVertex.connectNewDataSetAsInput(
 				headVertex,
 				DistributionPattern.POINTWISE,

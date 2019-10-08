@@ -347,6 +347,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 	public void connectSource(int inputNumber, IntermediateResult source, JobEdge edge, int consumerNumber) {
 
 		final DistributionPattern pattern = edge.getDistributionPattern();
+		//拿到所有partition
 		final IntermediateResultPartition[] sourcePartitions = source.getPartitions();
 
 		ExecutionEdge[] edges;
@@ -392,6 +393,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 		final int parallelism = getTotalNumberOfParallelSubtasks();
 
 		// simple case same number of sources as targets
+		//通常情况这个是成立的
 		if (numSources == parallelism) {
 			//如果srcpartition等于当前ev的并发度，那么每个并发和sourcepartition一一对应有一条边
 			return new ExecutionEdge[] { new ExecutionEdge(sourcePartitions[subTaskIndex], this, inputNumber) };
@@ -798,7 +800,9 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 				producedPartitions.add(ResultPartitionDeploymentDescriptor.from(partition, maxParallelism, lazyScheduling));
 			}
 		}
-
+		//edges表示该ExecutionVertex（一个特定的并发实例）对应的JobVertex的某个输入的所有ExecutionEdge
+		//通常如果pattern是pointwise，只有一条对应于subTaskIndex的边
+		//All to All, 暂时不去看，后面再看
 		for (ExecutionEdge[] edges : inputEdges) {
 			InputChannelDeploymentDescriptor[] partitions = InputChannelDeploymentDescriptor.fromEdges(
 				edges,
@@ -808,6 +812,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 			// If the produced partition has multiple consumers registered, we
 			// need to request the one matching our sub task index.
 			// TODO Refactor after removing the consumers from the intermediate result partitions
+			//因为edges， consumer都只有一个元素，所以这里取第0个
 			int numConsumerEdges = edges[0].getSource().getConsumers().get(0).size();
 
 			int queueToRequest = subTaskIndex % numConsumerEdges;

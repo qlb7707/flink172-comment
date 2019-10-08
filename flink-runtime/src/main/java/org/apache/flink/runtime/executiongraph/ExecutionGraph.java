@@ -835,7 +835,7 @@ public class ExecutionGraph implements AccessExecutionGraph {
 				rpcTimeout,
 				globalModVersion,
 				createTimestamp);
-			//连接前驱
+			//连接前驱, intermediateResults表示前驱节点输出的中间结果，开始是空的
 			ejv.connectToPredecessors(this.intermediateResults);
 
 			ExecutionJobVertex previousTask = this.tasks.putIfAbsent(jobVertex.getID(), ejv);

@@ -448,8 +448,9 @@ public class JobVertex implements java.io.Serializable {
 	public IntermediateDataSet createAndAddResultDataSet(
 			IntermediateDataSetID id,
 			ResultPartitionType partitionType) {
-
+		//新建输出结果，producer设为当前节点
 		IntermediateDataSet result = new IntermediateDataSet(id, partitionType, this);
+		//加入到当前节点输出列表
 		this.results.add(result);
 		return result;
 	}
@@ -461,15 +462,23 @@ public class JobVertex implements java.io.Serializable {
 		return edge;
 	}
 
+	/**
+	 * @param input 上游节点
+	 * @param distPattern
+	 * @param partitionType
+	 * @return
+	 */
 	public JobEdge connectNewDataSetAsInput(
 			JobVertex input,
 			DistributionPattern distPattern,
 			ResultPartitionType partitionType) {
-
+		//为上游节点创建输出结果
 		IntermediateDataSet dataSet = input.createAndAddResultDataSet(partitionType);
-
+		//创建边，源是上游输出，目的是下游节点
 		JobEdge edge = new JobEdge(dataSet, this, distPattern);
+		//加入下游节点的input边列表
 		this.inputs.add(edge);
+		//加入上游输出的consume列表
 		dataSet.addConsumer(edge);
 		return edge;
 	}

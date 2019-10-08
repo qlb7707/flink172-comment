@@ -67,7 +67,7 @@ public class IntermediateResult {
 
 		checkArgument(numParallelProducers >= 1);
 		this.numParallelProducers = numParallelProducers;
-
+		//分成多个IntermediateResultPartition， 数量等于并发度
 		this.partitions = new IntermediateResultPartition[numParallelProducers];
 
 		this.numberOfRunningProducers = new AtomicInteger(numParallelProducers);

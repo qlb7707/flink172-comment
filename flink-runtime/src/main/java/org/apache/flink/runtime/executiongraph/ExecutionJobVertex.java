@@ -190,7 +190,7 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 					numTaskVertices,
 					maxParallelism));
 		}
-
+		//并发度等于jobvertex的并发度
 		this.parallelism = numTaskVertices;
 
 		this.serializedTaskInformation = null;
@@ -211,11 +211,13 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 		}
 
 		// create the intermediate results
+		//中间结果，数量等于jobVertex的result数量，也就是jobVertex与下游节点所连接的边数
 		this.producedDataSets = new IntermediateResult[jobVertex.getNumberOfProducedIntermediateDataSets()];
 
 		for (int i = 0; i < jobVertex.getProducedDataSets().size(); i++) {
 			final IntermediateDataSet result = jobVertex.getProducedDataSets().get(i);
-
+			//对于每个中间结果，也就是每条输出边，创建一个IntermediateResult， 它不仅包含了IntermediateDataSet的信息
+			//还包含并发度， 根据并发度，会把这个结果分成多个partition
 			this.producedDataSets[i] = new IntermediateResult(
 					result.getId(),
 					this,
@@ -230,6 +232,7 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 
 		// create all task vertices
 		for (int i = 0; i < numTaskVertices; i++) {
+			//根据并发度，创建ExecutionVertex，i记录当前是第几个并发
 			ExecutionVertex vertex = new ExecutionVertex(
 					this,
 					i,
@@ -255,6 +258,7 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 			InputSplitSource<InputSplit> splitSource = (InputSplitSource<InputSplit>) jobVertex.getInputSplitSource();
 
 			if (splitSource != null) {
+				//设置线程上下文类加载器
 				Thread currentThread = Thread.currentThread();
 				ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
 				currentThread.setContextClassLoader(graph.getUserClassLoader());
@@ -428,7 +432,8 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 	//---------------------------------------------------------------------------------------------
 	//与前驱节点连接
 	public void connectToPredecessors(Map<IntermediateDataSetID, IntermediateResult> intermediateDataSets) throws JobException {
-		//获取jobvertex输入对应边的list
+		//获取jobvertex输入对应边的list，开始应该是空的
+		//JobVertex -> JobEdge -> IntermediateDataSet 没有并发度信息
 		List<JobEdge> inputs = jobVertex.getInputs();
 
 		if (LOG.isDebugEnabled()) {
@@ -452,6 +457,7 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 			// fetch the intermediate result via ID. if it does not exist, then it either has not been created, or the order
 			// in which this method is called for the job vertices is not a topological order
 			//获取这条边前驱节点产生的中间数据
+			//IntermediateResult 包含并发度信息
 			IntermediateResult ires = intermediateDataSets.get(edge.getSourceId());
 			if (ires == null) {
 				throw new JobException("Cannot connect this job graph to the previous graph. No previous intermediate result found for ID "
@@ -459,10 +465,11 @@ public class ExecutionJobVertex implements AccessExecutionJobVertex, Archiveable
 			}
 			//添加到inputs
 			this.inputs.add(ires);
-
+			//0
 			int consumerIndex = ires.registerConsumer();
 
 			for (int i = 0; i < parallelism; i++) {
+				//每个并发度对应有一个ExecutionVertex
 				ExecutionVertex ev = taskVertices[i];
 				ev.connectSource(num, ires, edge, consumerIndex);
 			}
