@@ -92,6 +92,7 @@ public class InputChannelDeploymentDescriptor implements Serializable {
 
 		// Each edge is connected to a different result partition
 		for (int i = 0; i < edges.length; i++) {
+			//表示从上游产生的哪个partition消费数据
 			final IntermediateResultPartition consumedPartition = edges[i].getSource();
 			final Execution producer = consumedPartition.getProducer().getCurrentExecutionAttempt();
 

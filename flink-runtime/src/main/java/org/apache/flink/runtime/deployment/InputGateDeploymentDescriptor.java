@@ -70,7 +70,7 @@ public class InputGateDeploymentDescriptor implements Serializable {
 
 		checkArgument(consumedSubpartitionIndex >= 0);
 		this.consumedSubpartitionIndex = consumedSubpartitionIndex;
-
+		//包含consumedPartitionid， 以及所在的location
 		this.inputChannels = checkNotNull(inputChannels);
 	}
 

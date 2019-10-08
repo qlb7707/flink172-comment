@@ -417,7 +417,7 @@ public class JobGraph implements Serializable {
 			Iterator<JobVertex> iter = remaining.iterator();
 			while (iter.hasNext()) {
 				JobVertex vertex = iter.next();
-
+				//拿到没有input的jobvertex, 也就是初始节点
 				if (vertex.hasNoConnectedInputs()) {
 					sorted.add(vertex);
 					iter.remove();
@@ -443,33 +443,41 @@ public class JobGraph implements Serializable {
 		return sorted;
 	}
 
+	//深度遍历，遍历结果加到target
 	private void addNodesThatHaveNoNewPredecessors(JobVertex start, List<JobVertex> target, Set<JobVertex> remaining) {
 
 		// forward traverse over all produced data sets and all their consumers
+		//遍历当前节点的所有输出
 		for (IntermediateDataSet dataSet : start.getProducedDataSets()) {
+			//遍历每个输出的所有consumer
 			for (JobEdge edge : dataSet.getConsumers()) {
 
 				// a vertex can be added, if it has no predecessors that are still in the 'remaining' set
+				//当前边连接的后继节点
 				JobVertex v = edge.getTarget();
+				//如果已经加进target，continue
 				if (!remaining.contains(v)) {
 					continue;
 				}
 
 				boolean hasNewPredecessors = false;
-
+				//遍历target节点的所有input边
 				for (JobEdge e : v.getInputs()) {
 					// skip the edge through which we came
+					//跳过当前边
 					if (e == edge) {
 						continue;
 					}
-
+					//获取e连接的前驱节点产生的中间结果
 					IntermediateDataSet source = e.getSource();
+					//如果它的生产者节点还没有包含进来， 那么跳出这层循环
 					if (remaining.contains(source.getProducer())) {
+						//标记为发现新的前驱
 						hasNewPredecessors = true;
 						break;
 					}
 				}
-
+				//如果已经没有新的前驱，那么把target节点加到target， 递归操作新加入的节点
 				if (!hasNewPredecessors) {
 					target.add(v);
 					remaining.remove(v);

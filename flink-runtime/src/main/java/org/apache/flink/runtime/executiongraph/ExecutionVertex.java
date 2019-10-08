@@ -393,6 +393,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 
 		// simple case same number of sources as targets
 		if (numSources == parallelism) {
+			//如果srcpartition等于当前ev的并发度，那么每个并发和sourcepartition一一对应有一条边
 			return new ExecutionEdge[] { new ExecutionEdge(sourcePartitions[subTaskIndex], this, inputNumber) };
 		}
 		else if (numSources < parallelism) {
@@ -402,6 +403,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 			// check if the pattern is regular or irregular
 			// we use int arithmetics for regular, and floating point with rounding for irregular
 			if (parallelism % numSources == 0) {
+				//如果并发度刚好是srcpartition的整数倍
 				// same number of targets per source
 				int factor = parallelism / numSources;
 				sourcePartition = subTaskIndex / factor;
@@ -809,7 +811,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 			int numConsumerEdges = edges[0].getSource().getConsumers().get(0).size();
 
 			int queueToRequest = subTaskIndex % numConsumerEdges;
-
+			//第一个partition
 			IntermediateResult consumedIntermediateResult = edges[0].getSource().getIntermediateResult();
 			final IntermediateDataSetID resultId = consumedIntermediateResult.getId();
 			final ResultPartitionType partitionType = consumedIntermediateResult.getResultType();

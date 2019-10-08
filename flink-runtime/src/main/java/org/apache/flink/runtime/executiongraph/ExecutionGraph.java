@@ -819,7 +819,7 @@ public class ExecutionGraph implements AccessExecutionGraph {
 
 		final ArrayList<ExecutionJobVertex> newExecJobVertices = new ArrayList<>(topologiallySorted.size());
 		final long createTimestamp = System.currentTimeMillis();
-
+		//遍历jobvertex
 		for (JobVertex jobVertex : topologiallySorted) {
 
 			if (jobVertex.isInputVertex() && !jobVertex.isStoppable()) {
@@ -827,6 +827,7 @@ public class ExecutionGraph implements AccessExecutionGraph {
 			}
 
 			// create the execution job vertex and attach it to the graph
+			//新建ExecutionJobVertex
 			ExecutionJobVertex ejv = new ExecutionJobVertex(
 				this,
 				jobVertex,
@@ -834,7 +835,7 @@ public class ExecutionGraph implements AccessExecutionGraph {
 				rpcTimeout,
 				globalModVersion,
 				createTimestamp);
-
+			//连接前驱
 			ejv.connectToPredecessors(this.intermediateResults);
 
 			ExecutionJobVertex previousTask = this.tasks.putIfAbsent(jobVertex.getID(), ejv);
