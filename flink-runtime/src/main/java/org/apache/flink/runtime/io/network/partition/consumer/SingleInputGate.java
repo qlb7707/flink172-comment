@@ -188,6 +188,7 @@ public class SingleInputGate implements InputGate {
 		JobID jobId,
 		IntermediateDataSetID consumedResultId,
 		final ResultPartitionType consumedPartitionType,
+		//0
 		int consumedSubpartitionIndex,
 		int numberOfInputChannels,
 		TaskActions taskActions,
@@ -491,6 +492,7 @@ public class SingleInputGate implements InputGate {
 				}
 
 				for (InputChannel inputChannel : inputChannels.values()) {
+					//consumedSubpartitionIndex = 0
 					inputChannel.requestSubpartition(consumedSubpartitionIndex);
 				}
 			}
@@ -666,13 +668,13 @@ public class SingleInputGate implements InputGate {
 		NetworkEnvironment networkEnvironment,
 		TaskActions taskActions,
 		TaskIOMetricGroup metrics) {
-
+		//中间结果id，total
 		final IntermediateDataSetID consumedResultId = checkNotNull(igdd.getConsumedResultId());
 		final ResultPartitionType consumedPartitionType = checkNotNull(igdd.getConsumedPartitionType());
-
+		//0
 		final int consumedSubpartitionIndex = igdd.getConsumedSubpartitionIndex();
 		checkArgument(consumedSubpartitionIndex >= 0);
-
+		//包含partitionId 和partition所在位置
 		final InputChannelDeploymentDescriptor[] icdd = checkNotNull(igdd.getInputChannelDeploymentDescriptors());
 
 		final SingleInputGate inputGate = new SingleInputGate(
@@ -680,16 +682,17 @@ public class SingleInputGate implements InputGate {
 			icdd.length, taskActions, metrics, networkEnvironment.isCreditBased());
 
 		// Create the input channels. There is one input channel for each consumed partition.
+		//创建channel， 每个partition一个channel
 		final InputChannel[] inputChannels = new InputChannel[icdd.length];
 
 		int numLocalChannels = 0;
 		int numRemoteChannels = 0;
 		int numUnknownChannels = 0;
-
+		//length通常是1
 		for (int i = 0; i < inputChannels.length; i++) {
 			final ResultPartitionID partitionId = icdd[i].getConsumedPartitionId();
 			final ResultPartitionLocation partitionLocation = icdd[i].getConsumedPartitionLocation();
-
+			//根据location创建channel
 			if (partitionLocation.isLocal()) {
 				inputChannels[i] = new LocalInputChannel(inputGate, i, partitionId,
 					networkEnvironment.getResultPartitionManager(),
@@ -727,7 +730,7 @@ public class SingleInputGate implements InputGate {
 			else {
 				throw new IllegalStateException("Unexpected partition location.");
 			}
-
+			//设置partitionId对应的inputChannel
 			inputGate.setInputChannel(partitionId.getPartitionId(), inputChannels[i]);
 		}
 

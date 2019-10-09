@@ -60,9 +60,12 @@ public class InputGateDeploymentDescriptor implements Serializable {
 	private final InputChannelDeploymentDescriptor[] inputChannels;
 
 	public InputGateDeploymentDescriptor(
+			//中间结果id
 			IntermediateDataSetID consumedResultId,
 			ResultPartitionType consumedPartitionType,
+			//通常是0
 			int consumedSubpartitionIndex,
+			//包含partitionId 和partition所在位置
 			InputChannelDeploymentDescriptor[] inputChannels) {
 
 		this.consumedResultId = checkNotNull(consumedResultId);

@@ -151,7 +151,7 @@ public class InputChannelDeploymentDescriptor implements Serializable {
 			icdd[i] = new InputChannelDeploymentDescriptor(
 					consumedPartitionId, partitionLocation);
 		}
-
+		//包含partitionid， 和partition所在位置
 		return icdd;
 	}
 }

@@ -162,9 +162,11 @@ public class BarrierBuffer implements CheckpointBarrierHandler {
 			// process buffered BufferOrEvents before grabbing new ones
 			Optional<BufferOrEvent> next;
 			if (currentBuffered == null) {
+				//如果buffer为空， 则从inputGate里面取数据
 				next = inputGate.getNextBufferOrEvent();
 			}
 			else {
+				//如果buffer不为空，那么首先尝试从buffer里面拿数据
 				next = Optional.ofNullable(currentBuffered.getNext());
 				if (!next.isPresent()) {
 					completeBufferedSequence();

@@ -377,6 +377,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 		}
 
 		// Consumed intermediate result partitions
+		//为所有输入创建inputgates
 		this.inputGates = new SingleInputGate[inputGateDeploymentDescriptors.size()];
 		this.inputGatesById = new HashMap<>();
 
@@ -652,7 +653,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 			// ----------------------------------------------------------------
 
 			TaskKvStateRegistry kvStateRegistry = network.createKvStateTaskRegistry(jobId, getJobVertexId());
-
+			//创建运行时环境
 			Environment env = new RuntimeEnvironment(
 				jobId,
 				vertexId,
@@ -671,6 +672,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 				inputSplitProvider,
 				distributedCacheEntries,
 				producedPartitions,
+				//传入inputGates
 				inputGates,
 				network.getTaskEventDispatcher(),
 				checkpointResponder,
@@ -679,6 +681,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 				this);
 
 			// now load and instantiate the task's invokable code
+			//创建invokable， 运行时的StreamTask就是在这里实例化
 			invokable = loadAndInstantiateInvokable(userCodeClassLoader, nameOfInvokableClass, env);
 
 			// ----------------------------------------------------------------
@@ -701,6 +704,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 			executingThread.setContextClassLoader(userCodeClassLoader);
 
 			// run the invokable
+			//运行invokable
 			invokable.invoke();
 
 			// make sure, we enter the catch block if the task leaves the invoke() method due
@@ -1395,6 +1399,7 @@ public class Task implements Runnable, TaskActions, CheckpointListener {
 		// instantiate the class
 		try {
 			//noinspection ConstantConditions  --> cannot happen
+			//反射创建实例
 			return statelessCtor.newInstance(environment);
 		} catch (InvocationTargetException e) {
 			// directly forward exceptions from the eager initialization

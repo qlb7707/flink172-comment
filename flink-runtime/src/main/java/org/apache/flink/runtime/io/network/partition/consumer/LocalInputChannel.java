@@ -96,7 +96,7 @@ public class LocalInputChannel extends InputChannel implements BufferAvailabilit
 
 	@Override
 	void requestSubpartition(int subpartitionIndex) throws IOException, InterruptedException {
-
+		//subpartitionIndex = 0
 		boolean retriggerRequest = false;
 
 		// The lock is required to request only once in the presence of retriggered requests.
@@ -108,6 +108,7 @@ public class LocalInputChannel extends InputChannel implements BufferAvailabilit
 					this, subpartitionIndex, partitionId);
 
 				try {
+					//partitionId 包含了上游输出结果的partitionId，及其producerid
 					ResultSubpartitionView subpartitionView = partitionManager.createSubpartitionView(
 						partitionId, subpartitionIndex, this);
 

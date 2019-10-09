@@ -373,6 +373,8 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 		// for now (until the receiver initiated handshake is in place), we need to register the
 		// edges as the execution graph
 		for (ExecutionEdge ee : edges) {
+			//每条ExecutionEdge的source consumer列表的第0个列表中加入该条边，consumerNumber为0
+			//pointwise，edges一般只有一条边
 			ee.getSource().addConsumer(ee, consumerNumber);
 		}
 	}
@@ -800,7 +802,7 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 				producedPartitions.add(ResultPartitionDeploymentDescriptor.from(partition, maxParallelism, lazyScheduling));
 			}
 		}
-		//edges表示该ExecutionVertex（一个特定的并发实例）对应的JobVertex的某个输入的所有ExecutionEdge
+		//edges表示该ExecutionVertex（一个特定的并发实例）对应的JobVertex的某个输入的所有ExecutionEdge，这里就是遍历所有输入
 		//通常如果pattern是pointwise，只有一条对应于subTaskIndex的边
 		//All to All, 暂时不去看，后面再看
 		for (ExecutionEdge[] edges : inputEdges) {
@@ -813,14 +815,15 @@ public class ExecutionVertex implements AccessExecutionVertex, Archiveable<Archi
 			// need to request the one matching our sub task index.
 			// TODO Refactor after removing the consumers from the intermediate result partitions
 			//因为edges， consumer都只有一个元素，所以这里取第0个
+			//取出edges对应的partition的consumer个数
 			int numConsumerEdges = edges[0].getSource().getConsumers().get(0).size();
-
+			//pointwise的话，通常这个queueToRequest = 0
 			int queueToRequest = subTaskIndex % numConsumerEdges;
 			//第一个partition
 			IntermediateResult consumedIntermediateResult = edges[0].getSource().getIntermediateResult();
 			final IntermediateDataSetID resultId = consumedIntermediateResult.getId();
 			final ResultPartitionType partitionType = consumedIntermediateResult.getResultType();
-
+			//consumedPartitions有多个，partitions有1个
 			consumedPartitions.add(new InputGateDeploymentDescriptor(resultId, partitionType, queueToRequest, partitions));
 		}
 
