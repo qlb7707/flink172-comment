@@ -92,6 +92,7 @@ import static org.apache.flink.util.Preconditions.checkState;
  * Before using {@link FlinkKafkaProducer.Semantic#EXACTLY_ONCE} please refer to Flink's
  * Kafka connector documentation.
  */
+@SuppressWarnings("ALL")
 @PublicEvolving
 public class FlinkKafkaProducer<IN>
 	extends TwoPhaseCommitSinkFunction<IN, FlinkKafkaProducer.KafkaTransactionState, FlinkKafkaProducer.KafkaTransactionContext> {
@@ -586,13 +587,16 @@ public class FlinkKafkaProducer<IN>
 	 */
 	@Override
 	public void open(Configuration configuration) throws Exception {
+		//设置回调
 		if (logFailuresOnly) {
 			callback = new Callback() {
 				@Override
 				public void onCompletion(RecordMetadata metadata, Exception e) {
+					//打印出错日志
 					if (e != null) {
 						LOG.error("Error while sending record to Kafka: " + e.getMessage(), e);
 					}
+					//计数器递减
 					acknowledgeMessage();
 				}
 			};
@@ -615,7 +619,7 @@ public class FlinkKafkaProducer<IN>
 	@Override
 	public void invoke(FlinkKafkaProducer.KafkaTransactionState transaction, IN next, Context context) throws FlinkKafkaException {
 		checkErroneous();
-
+		//序列化key和value
 		byte[] serializedKey = schema.serializeKey(next);
 		byte[] serializedValue = schema.serializeValue(next);
 		String targetTopic = schema.getTargetTopic(next);
@@ -631,10 +635,15 @@ public class FlinkKafkaProducer<IN>
 		ProducerRecord<byte[], byte[]> record;
 		int[] partitions = topicPartitionsMap.get(targetTopic);
 		if (null == partitions) {
+			//获取topic相关的partition id，从小到大排序
 			partitions = getPartitionsByTopic(targetTopic, transaction.producer);
+			//把topic和partition的对应关系存到map中
 			topicPartitionsMap.put(targetTopic, partitions);
 		}
+		//创建ProducerRecord
 		if (flinkKafkaPartitioner != null) {
+			//如果指定了flinkKafkaPartitioner（flink层面的partitioner）
+			//那么通过flinkKafkaPartitioner计算出partition， 即为这个record要发往的partition
 			record = new ProducerRecord<>(
 				targetTopic,
 				flinkKafkaPartitioner.partition(next, serializedKey, serializedValue, targetTopic, partitions),
@@ -642,9 +651,13 @@ public class FlinkKafkaProducer<IN>
 				serializedKey,
 				serializedValue);
 		} else {
+			//如果没有指定flinkKafkaPartitioner，那么ProducerRecord中指定partition为null
+			//此时这个record去往哪个partition将由kafka决定
 			record = new ProducerRecord<>(targetTopic, null, timestamp, serializedKey, serializedValue);
 		}
+		//计数器递增
 		pendingRecords.incrementAndGet();
+		//send record
 		transaction.producer.send(record, callback);
 	}
 
@@ -1021,16 +1034,18 @@ public class FlinkKafkaProducer<IN>
 
 	private static int[] getPartitionsByTopic(String topic, Producer<byte[], byte[]> producer) {
 		// the fetched list is immutable, so we're creating a mutable copy in order to sort it
+		//获取partition List
 		List<PartitionInfo> partitionsList = new ArrayList<>(producer.partitionsFor(topic));
 
 		// sort the partitions by partition id to make sure the fetched partition list is the same across subtasks
+		// 按照partitionId对 partition List排序
 		Collections.sort(partitionsList, new Comparator<PartitionInfo>() {
 			@Override
 			public int compare(PartitionInfo o1, PartitionInfo o2) {
 				return Integer.compare(o1.partition(), o2.partition());
 			}
 		});
-
+		//获取partition id数组
 		int[] partitions = new int[partitionsList.size()];
 		for (int i = 0; i < partitions.length; i++) {
 			partitions[i] = partitionsList.get(i).partition();
